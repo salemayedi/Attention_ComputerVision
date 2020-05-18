@@ -111,11 +111,11 @@ def main(args):
             torch.save(model.state_dict(), path_model )
             ######raise NotImplementedError("TODO: save model if a new best validation error was reached")
 
-    pd.DataFrame({'train_loss':train_loss_list}).to_csv(args.plots_folder+'\train_loss.csv', index= False)
-    pd.DataFrame({'train_acc':train_acc_list}).to_csv(args.plots_folder+'\acc_loss.csv', index= False)
-    pd.DataFrame({'val_loss':val_loss_list}).to_csv(args.plots_folder+'\val_loss.csv', index= False)
-    pd.DataFrame({'val_acc':val_acc_list}).to_csv(args.plots_folder+'\acc_loss.csv', index= False)
-    
+    pd.DataFrame({'train_loss':train_loss_list}).to_csv(args.plots_folder+'\\'+'train_loss.csv', index= False)
+    pd.DataFrame({'train_acc':train_acc_list}).to_csv(args.plots_folder+'\\'+'acc_loss.csv', index= False)
+    pd.DataFrame({'val_loss':val_loss_list}).to_csv(args.plots_folder+'\\'+'val_loss.csv', index= False)
+    pd.DataFrame({'val_acc':val_acc_list}).to_csv(args.plots_folder+'\\'+'acc_loss.csv', index= False)
+
     save_fig (train_loss_list, 'train_loss')
     save_fig (train_acc_list, 'train_acc')
     save_fig (val_loss_list, 'val_loss')
