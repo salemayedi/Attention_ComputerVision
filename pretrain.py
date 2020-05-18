@@ -8,6 +8,7 @@ from data.transforms import get_transforms_pretraining
 from utils import check_dir, accuracy, get_logger
 from models.pretraining_backbone import ResNet18Backbone
 import matplotlib.pyplot as plt
+import pandas as pd
 
 
 global_step = 0
@@ -34,6 +35,7 @@ def parse_arguments():
     args.output_folder = check_dir(os.path.join(args.output_root, 'pretrain', args.exp_name))
     args.model_folder = check_dir(os.path.join(args.output_folder, "models"))
     args.logs_folder = check_dir(os.path.join(args.output_folder, "logs"))
+    args.plots_folder = check_dir(os.path.join(args.output_folder, "plots"))
 
     return args
 
@@ -44,6 +46,7 @@ def main(args):
 
     # Device configuration
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print('#### This is the device used: ', device, '####')
     # build model and load weights
     model = ResNet18Backbone(pretrained=False).to(device)
     
@@ -56,17 +59,17 @@ def main(args):
     data_root = args.data_folder
     train_transform, val_transform = get_transforms_pretraining(args)
     train_data = DataReaderPlainImg(os.path.join(data_root, str(args.size), "train"), transform=train_transform)
-    print(' hereeeeeeeeeeeeeeeeeeee', type(train_data.__getitem__(5)[0][0]))
-    plt.imshow(train_data.__getitem__(5)[0][0].numpy().transpose(2,1,0), interpolation='nearest')
-    plt.show()
-    plt.imshow(train_data.__getitem__(100)[0][0].numpy()[2])
-    plt.show()
-    plt.imshow(train_data.__getitem__(100)[0][1].numpy()[2])
-    plt.show()
-    plt.imshow(train_data.__getitem__(100)[0][2].numpy()[2])
-    plt.show()
-    plt.imshow(train_data.__getitem__(100)[0][3].numpy()[2])
-    plt.show()
+    # print(' hereeeeeeeeeeeeeeeeeeee', type(train_data.__getitem__(5)[0][0]))
+    # plt.imshow(train_data.__getitem__(5)[0][0].numpy().transpose(2,1,0), interpolation='nearest')
+    # plt.show()
+    # plt.imshow(train_data.__getitem__(100)[0][0].numpy()[2])
+    # plt.show()
+    # plt.imshow(train_data.__getitem__(100)[0][1].numpy()[2])
+    # plt.show()
+    # plt.imshow(train_data.__getitem__(100)[0][2].numpy()[2])
+    # plt.show()
+    # plt.imshow(train_data.__getitem__(100)[0][3].numpy()[2])
+    # plt.show()
     val_data = DataReaderPlainImg(os.path.join(data_root, str(args.size), "val"), transform=val_transform)
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.bs, shuffle=True, num_workers=2,
                                                pin_memory=True, drop_last=True, collate_fn=custom_collate)
@@ -87,43 +90,77 @@ def main(args):
 
     best_val_loss = np.inf
     # Train-validate for one epoch. You don't have to run it for 100 epochs, preferably until it starts overfitting.
+    train_loss_list = []
+    train_acc_list = []
+    val_loss_list = []
+    val_acc_list = []
     for epoch in range(10):
         print("Epoch {}".format(epoch))
-        train(train_loader, model, criterion, optimizer)
+        train_loss, train_acc = train(train_loader, model, criterion, optimizer)
         val_loss, val_acc = validate(val_loader, model, criterion)
+
+        train_loss_list.append(train_loss)
+        train_acc_list.append(train_acc)
+        val_loss_list.append(val_loss)
+        val_acc_list.append(val_acc)
 
         # save model
         if val_loss < best_val_loss:
+            best_val_loss = val_loss
             path_model = args.model_folder + '\checkpoint.pth'
             torch.save(model.state_dict(), path_model )
             ######raise NotImplementedError("TODO: save model if a new best validation error was reached")
 
+    pd.DataFrame({'train_loss':train_loss_list}).to_csv(args.plots_folder+'\train_loss.csv', index= False)
+    pd.DataFrame({'train_acc':train_acc_list}).to_csv(args.plots_folder+'\acc_loss.csv', index= False)
+    pd.DataFrame({'val_loss':val_loss_list}).to_csv(args.plots_folder+'\val_loss.csv', index= False)
+    pd.DataFrame({'val_acc':val_acc_list}).to_csv(args.plots_folder+'\acc_loss.csv', index= False)
+    
+    save_fig (train_loss_list, 'train_loss')
+    save_fig (train_acc_list, 'train_acc')
+    save_fig (val_loss_list, 'val_loss')
+    save_fig (val_acc_list, 'val_acc')
+
 
 # train one epoch over the whole training dataset. You can change the method's signature.
 def train(loader, model, criterion, optimizer):
-    model.train()
+    #model.train()
+    i = 0
+    train_loss = 0
+    train_acc = 0
     for batch_i, (data, target) in enumerate(loader):
         optimizer.zero_grad()
         output = model(data)
         loss = criterion(output, target)
-        print('new batch ',batch_i, ' with loss: ', round(loss.item(),3))
         loss.backward()
         optimizer.step()
-
+        train_loss += round(loss.item(),5)
+        train_acc += accuracy(output, target)
+        i += 1
+        print('new batch ',batch_i, ' with loss: ', round(loss.item(),3))
+    train_acc = round((train_acc/i),3)
+    
+    return train_loss, train_acc
     ############raise NotImplementedError("TODO: training routine")
 
 
 # validation function. you can change the method's signature.
 def validate(loader, model, criterion):
-    model.eval()
-    for data,target in enumerate (loader):
-        output = model(data)
-        val_loss = criterion(output, target).mean()
-        val_acc = accuracy(output, target)
+    with torch.no_grad():        
+        for data,target in enumerate (loader):
+            output = model(data)
+            val_loss = criterion(output, target).mean()
+            val_acc = accuracy(output, target)
+
     return val_loss, val_acc
     #########raise NotImplementedError("TODO: validation routine")
     # return mean_val_loss, mean_val_accuracy
 
+def save_fig (train_list, name):
+    plt.plot(train_list)
+    plt.xlabel('epochs')
+    plt.ylabel(name)
+    plt.savefig(args.plots_folder+ '\\' + name +'.png')
 
 if __name__ == '__main__':
     args = parse_arguments()
