@@ -1,0 +1,1 @@
+python pretrain.py unlabelled_dataset\crops\images --weights-init pretrain_weights_init.pth --bs 64
