@@ -166,7 +166,7 @@ def validate(loader, model, criterion, device):
     with torch.no_grad():        
         for batch_i, (data, target) in enumerate (loader):
             output = model(data.to(device))
-            val_loss = criterion(output, target.to(device)).mean().item()
+            val_loss += criterion(output, target.to(device)).mean().item()
             val_acc += accuracy(output, target.to(device))[0].item()
             i += 1
             if ((i % 200) == 0):
