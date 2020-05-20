@@ -105,13 +105,14 @@ def main(args):
         val_loss_list.append(val_loss)
         val_acc_list.append(val_acc)
         # save for every epoch
-        path_model = args.model_folder + '\checkpoint_' + str(epoch) +'_.pth'
+        
+        path_model = os.path.join(args.model_folder , 'checkpoint_' + str(epoch) +'_.pth')
         torch.save(model.state_dict(), path_model )
         
         # save model
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            path_model = args.model_folder + '\checkpoint_best_val_' + str(epoch) +'_.pth'
+            path_model = os.path.join(args.model_folder , 'checkpoint_best_val_' + str(epoch) +'_.pth')
             torch.save(model.state_dict(), path_model )
             ######raise NotImplementedError("TODO: save model if a new best validation error was reached")
 
@@ -120,10 +121,10 @@ def main(args):
         pd.DataFrame({'val_loss':val_loss_list}).to_csv('val_loss.csv', index= False)
         pd.DataFrame({'val_acc':val_acc_list}).to_csv('val_acc.csv', index= False)
 
-        save_fig (train_loss_list, 'train_loss.png')
-        save_fig (train_acc_list, 'train_acc.png')
-        save_fig (val_loss_list, 'val_loss.png')
-        save_fig (val_acc_list, 'val_acc.png')
+        save_fig (train_loss_list, 'train_loss')
+        save_fig (train_acc_list, 'train_acc')
+        save_fig (val_loss_list, 'val_loss')
+        save_fig (val_acc_list, 'val_acc')
     #os.path.join(args.plots_folder, 'train_loss.csv')
     # pd.DataFrame({'train_loss':train_loss_list}).to_csv(args.plots_folder+'\\'+'train_loss.csv', index= False)
     # pd.DataFrame({'train_acc':train_acc_list}).to_csv(args.plots_folder+'\\'+'train_acc.csv', index= False)
@@ -194,7 +195,8 @@ def save_fig (train_list, name):
     plt.plot(train_list)
     plt.xlabel('epochs')
     plt.ylabel(name)
-    plt.savefig(args.plots_folder+ '\\' + name +'.png')
+    path = os.path.join(args.plots_folder, name+'.png')
+    plt.savefig(path)
 
 if __name__ == '__main__':
     args = parse_arguments()
