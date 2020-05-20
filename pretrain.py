@@ -131,12 +131,12 @@ def train(loader, model, criterion, optimizer, device):
     for batch_i, (data, target) in enumerate(loader):
         optimizer.zero_grad()
         output = model(data.to(device))
-        loss = criterion(output, target)
+        loss = criterion(output, target.to(device))
         loss.backward()
         optimizer.step()
         train_loss += loss.mean().item()
         #train_acc += accuracy(output, target)
-        train_acc += accuracy(output, target)[0].numpy()[0]
+        train_acc += accuracy(output, target.to(device)).item()
         i += 1
         print('new batch ',batch_i, ' with loss: ', round(loss.item(),3))
         if (i== 50):
@@ -156,8 +156,8 @@ def validate(loader, model, criterion, device):
         for batch_i, (data, target) in enumerate (loader):
             print ('validation batch: ', batch_i)
             output = model(data.to(device))
-            val_loss = criterion(output, target).mean().numpy()
-            val_acc += accuracy(output, target)[0].numpy()[0]
+            val_loss = criterion(output, target.to(device)).mean().numpy()
+            val_acc += accuracy(output, target.to(device))[0].numpy()[0]
             i += 1
             if (i== 50):
                 break
