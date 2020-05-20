@@ -137,6 +137,8 @@ def train(loader, model, criterion, optimizer, device):
         train_loss += loss.mean().item()
         #train_acc += accuracy(output, target)
         print(accuracy(output, target.to(device)))
+        print(accuracy(output, target.to(device))[0] )
+        print(accuracy(output, target.to(device))[0].item() )
         print(type(accuracy(output, target.to(device))))
         train_acc += accuracy(output, target.to(device))
         i += 1
