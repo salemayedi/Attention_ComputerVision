@@ -135,14 +135,15 @@ def train(loader, model, criterion, optimizer, device):
         loss.backward()
         optimizer.step()
         train_loss += loss.mean().item()
+        print(train_loss)
         #train_acc += accuracy(output, target)
-        print(accuracy(output, target.to(device)))
-        print(accuracy(output, target.to(device))[0] )
-        print(accuracy(output, target.to(device))[0].item() )
-        print(type(accuracy(output, target.to(device))))
-        train_acc += accuracy(output, target.to(device))
+        #print(accuracy(output, target.to(device)))
+        #print(accuracy(output, target.to(device))[0] )
+        #print(accuracy(output, target.to(device))[0].item() )
+        #print(type(accuracy(output, target.to(device))))
+        train_acc += accuracy(output, target.to(device))[0].item()
         i += 1
-        print('new batch ',batch_i, ' with loss: ', round(loss.item(),3))
+        print('new batch ',batch_i, ' with loss: ', round(train_loss,3))
         if (i== 50):
             break
     train_acc = round((train_acc/i),3)
@@ -160,8 +161,8 @@ def validate(loader, model, criterion, device):
         for batch_i, (data, target) in enumerate (loader):
             print ('validation batch: ', batch_i)
             output = model(data.to(device))
-            val_loss = criterion(output, target.to(device)).mean().numpy()
-            val_acc += accuracy(output, target.to(device))[0].numpy()[0]
+            val_loss = criterion(output, target.to(device)).mean().item(s)
+            val_acc += accuracy(output, target.to(device))[0].item()
             i += 1
             if (i== 50):
                 break
