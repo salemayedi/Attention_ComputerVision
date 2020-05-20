@@ -136,6 +136,8 @@ def train(loader, model, criterion, optimizer, device):
         optimizer.step()
         train_loss += loss.mean().item()
         #train_acc += accuracy(output, target)
+        print(accuracy(output, target.to(device)).item())
+        print(type(accuracy(output, target.to(device)).item()))
         train_acc += accuracy(output, target.to(device)).item()
         i += 1
         print('new batch ',batch_i, ' with loss: ', round(loss.item(),3))
