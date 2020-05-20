@@ -98,6 +98,7 @@ def main(args):
         print("Epoch {}".format(epoch))
         train_loss, train_acc = train(train_loader, model, criterion, optimizer, device)
         val_loss, val_acc = validate(val_loader, model, criterion, device)
+        print('Epoch: ', epoch, ' val_acc ', val_acc, ' val_loss ', val_loss, ' train_acc: ',train_acc, ' train_loss: ', train_loss )
 
         train_loss_list.append(train_loss)
         train_acc_list.append(train_acc)
@@ -149,9 +150,10 @@ def train(loader, model, criterion, optimizer, device):
         i += 1
         
         if ((i% 200)== 0):
-            print('new batch ',batch_i, ' with loss: ', round(train_loss,3))
+            print('train batch ',batch_i, ' with loss: ', round(train_loss/i,3))
     train_acc = round((train_acc/i),3)
-    
+    train_loss = round((train_loss/i),3)
+
     return train_loss, train_acc
     ############raise NotImplementedError("TODO: training routine")
 
@@ -168,9 +170,9 @@ def validate(loader, model, criterion, device):
             val_acc += accuracy(output, target.to(device))[0].item()
             i += 1
             if ((i % 200) == 0):
-                print ('validation batch: ', batch_i)
+                print ('validation batch: ', batch_i, ' with loss: ', round(val_loss/i,3))
     val_acc = round((val_acc/i),3)
-    print('val_acc ', val_acc, ' val_loss ', val_loss)
+    val_loss = round((val_loss/i),3)
     return val_loss, val_acc
     #########raise NotImplementedError("TODO: validation routine")
     # return mean_val_loss, mean_val_accuracy
