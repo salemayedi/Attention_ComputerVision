@@ -143,9 +143,9 @@ def train(loader, model, criterion, optimizer, device):
         #print(type(accuracy(output, target.to(device))))
         train_acc += accuracy(output, target.to(device))[0].item()
         i += 1
-        print('new batch ',batch_i, ' with loss: ', round(train_loss,3))
-        if (i== 50):
-            break
+        
+        if ((i% 200)== 0):
+            print('new batch ',batch_i, ' with loss: ', round(train_loss,3))
     train_acc = round((train_acc/i),3)
     
     return train_loss, train_acc
@@ -164,8 +164,8 @@ def validate(loader, model, criterion, device):
             val_loss = criterion(output, target.to(device)).mean().item()
             val_acc += accuracy(output, target.to(device))[0].item()
             i += 1
-            if (i== 50):
-                break
+            if ((i % 200) == 0):
+                print ('validation batch: ', batch_i)
     val_acc = round((val_acc/i),3)
     print('val_acc ', val_acc, ' val_loss ', val_loss)
     return val_loss, val_acc
