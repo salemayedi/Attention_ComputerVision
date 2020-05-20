@@ -140,7 +140,6 @@ def train(loader, model, criterion, optimizer, device):
         loss.backward()
         optimizer.step()
         train_loss += loss.mean().item()
-        print(train_loss)
         #train_acc += accuracy(output, target)
         #print(accuracy(output, target.to(device)))
         #print(accuracy(output, target.to(device))[0] )
@@ -164,7 +163,6 @@ def validate(loader, model, criterion, device):
     val_acc = 0
     with torch.no_grad():        
         for batch_i, (data, target) in enumerate (loader):
-            print ('validation batch: ', batch_i)
             output = model(data.to(device))
             val_loss = criterion(output, target.to(device)).mean().item()
             val_acc += accuracy(output, target.to(device))[0].item()
