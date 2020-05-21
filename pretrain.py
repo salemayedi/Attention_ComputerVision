@@ -105,7 +105,8 @@ def main(args):
         val_loss_list.append(val_loss)
         val_acc_list.append(val_acc)
         # save for every epoch
-        
+        if not os.path.exists(args.model_folder):
+            os.makedirs(args.model_folder)
         path_model = os.path.join(args.model_folder , 'checkpoint_' + str(epoch) +'_.pth')
         torch.save(model.state_dict(), path_model )
         
@@ -195,6 +196,8 @@ def save_fig (train_list, name):
     plt.plot(train_list)
     plt.xlabel('epochs')
     plt.ylabel(name)
+    if not os.path.exists(args.plots_folder):
+        os.makedirs(args.plots_folder)
     path = os.path.join(args.plots_folder, name+'.png')
     plt.savefig(path)
 
