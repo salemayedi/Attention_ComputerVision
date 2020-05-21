@@ -37,7 +37,7 @@ def main(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print('#### This is the device used: ', device, '####')
     model = ResNet18Backbone(pretrained=False).to(device) 
-    model.load_state_dict(torch.load(args.weights_init, map_location = device) , strict=False)
+    model.load_state_dict(torch.load(args.weights_init, map_location = device)['model'] , strict=False)
     # dataset
     val_transform = Compose([Resize(args.size), CenterCrop((args.size, args.size)), ToTensor()])
     val_data = DataReaderPlainImg(os.path.join(data_root, str(args.size), "val"), transform=val_transform)

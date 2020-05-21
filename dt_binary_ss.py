@@ -1,5 +1,5 @@
 import os
-import pprint
+from pprint import pprint
 import random
 import sys
 sys.path.insert(0,os.getcwd())
@@ -29,7 +29,7 @@ def parse_arguments():
     parser.add_argument('--exp-suffix', type=str, default="", help="string to identify the experiment")
     args = parser.parse_args()
 
-    hparam_keys = ["lr", "bs", "loss"]
+    hparam_keys = ["lr", "bs"]
     args.exp_name = "_".join(["{}{}".format(k, getattr(args, k)) for k in hparam_keys])
 
     args.exp_name += "_{}".format(args.exp_suffix)
@@ -47,9 +47,14 @@ def main(args):
     img_size = (args.size, args.size)
 
     # model
-    pretrained_model = None
-    raise NotImplementedError("TODO: build model and load pretrained weights")
-    model = Segmentator(2, pretrained_model.features, img_size).cuda()
+    data_root = args.data_folder
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print('#### This is the device used: ', device, '####')
+    pretrained_model = ResNet18Backbone(pretrained=False).to(device) 
+    pretrained_model.load_state_dict(torch.load(args.weights_init, map_location = device)['model'] , strict=False)
+    #pretrained_model = None
+    #raise NotImplementedError("TODO: build model and load pretrained weights")
+    model = Segmentator(2, pretrained_model.features, img_size).to(device)
 
     # dataset
     train_trans, val_trans, train_target_trans, val_target_trans = get_transforms_binary_segmentation(args)
@@ -73,10 +78,10 @@ def main(args):
                                              num_workers=6, pin_memory=True, drop_last=False)
 
     # TODO: loss
-    criterion = None
+    criterion = torch.nn.CrossEntropyLoss() # This criterion combines nn.LogSoftmax() and nn.NLLLoss() in one single class.
     # TODO: SGD optimizer (see pretraining)
-    optimizer = None
-    raise NotImplementedError("TODO: loss function and SGD optimizer")
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=1e-4)
+    #raise NotImplementedError("TODO: loss function and SGD optimizer")
 
     expdata = "  \n".join(["{} = {}".format(k, v) for k, v in vars(args).items()])
     logger.info(expdata)
@@ -87,20 +92,76 @@ def main(args):
     best_val_miou = 0.0
     for epoch in range(100):
         logger.info("Epoch {}".format(epoch))
-        train(train_loader, model, criterion, optimizer, logger)
-        val_results = validate(val_loader, model, criterion, logger, epoch)
+        train_results = train(train_loader, model, criterion, optimizer, logger, device)
+        val_results = validate(val_loader, model, criterion, logger, device, epoch)
 
         # TODO save model
+        path_model = os.path.join(args.model_folder , 'checkpoint_' + str(epoch) +'_.pth')
+        torch.save(model.state_dict(), path_model )
+        import pdb; pdb.set_trace()
+
+        mean_val_loss, mean_val_iou = val_results
+        mean_train_loss, mean_train_iou = train_results
+
+        if mean_val_loss < best_val_loss:
+            best_val_loss = mean_val_loss
+            path_model = os.path.join(args.model_folder , 'checkpoint_best_val_' + str(epoch) +'_.pth')
+            torch.save(model.state_dict(), path_model )
+        
+        
 
 
 
-def train(loader, model, criterion, optimizer, logger):
-    raise NotImplementedError("TODO: training routine")
+def train(loader, model, criterion, optimizer, logger, device):
+    train_loss = 0
+    train_iou = 0
+    for batch_i, (data, target) in enumerate(loader):
+        target = target * 255
+        target = torch.squeeze(target,1).long()
+
+        optimizer.zero_grad()
+        output = model(data.to(device))
+        loss = criterion(output, target.to(device))
+        loss.backward()
+        optimizer.step()
+        train_loss += loss.item()
+        train_iou += mIoU(output, target.to(device)).item()
+
+        if batch_i == 1:
+            break
+    mean_train_loss = round((train_loss/(batch_i+1)), 5)
+    mean_train_iou = round((train_iou/(batch_i+1)), 5)
+
+    logger.info("mean train_loss {} mean train_iou {}".format(mean_train_loss, mean_train_iou))
+
+    return (mean_train_loss, mean_train_iou)
+    #raise NotImplementedError("TODO: training routine")
 
 
-def validate(loader, model, criterion, logger, epoch=0):
-    raise NotImplementedError("TODO: validation routine")
-    # return mean_val_loss, mean_val_iou
+def validate(loader, model, criterion, logger, device, epoch=0):
+    model.eval()
+    val_loss = 0
+    val_iou = 0
+    with torch.no_grad():
+        for batch_i, (data, target) in enumerate(loader):
+            output = model(data.to(device))
+
+            target = target * 255
+            target = torch.nn.functional.interpolate(target, ( output.shape[2], output.shape[3]) )
+            target = torch.squeeze(target,1).long()
+
+            loss = criterion(output, target.to(device))
+            val_loss += loss.mean().item()
+            val_iou += mIoU(output, target.to(device)).item()
+            if batch_i == 1:
+                break
+
+    mean_val_loss = round((val_loss/(batch_i+1)), 5)
+    mean_val_iou = round((val_iou/(batch_i+1)), 5)
+
+    logger.info("epoch {} mean val_loss {} mean val_iou {}".format(epoch, mean_val_loss, mean_val_iou))
+    #raise NotImplementedError("TODO: validation routine")
+    return (mean_val_loss, mean_val_iou)
 
 
 def save_model(model, optimizer, args, epoch, val_loss, val_iou, logger, best=False):

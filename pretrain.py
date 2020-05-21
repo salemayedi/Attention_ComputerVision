@@ -50,7 +50,10 @@ def main(args):
     # build model and load weights
     model = ResNet18Backbone(pretrained=False).to(device)
     
-    model.load_state_dict(torch.load(args.weights_init, map_location = device) , strict=False)
+    # checkpoint = torch.load("pretrain_weights_init.pth")
+    # model.load_state_dict(checkpoint['model'])
+
+    model.load_state_dict(torch.load(args.weights_init, map_location = device)['model'] , strict=False)
     #raise NotImplementedError("TODO: load weight initialization")
     
 
@@ -146,7 +149,6 @@ def main(args):
 # train one epoch over the whole training dataset. You can change the method's signature.
 def train(loader, model, criterion, optimizer, device):
     #model.train()
-    i = 0
     train_loss = 0
     train_acc = 0
     for batch_i, (data, target) in enumerate(loader):
@@ -156,18 +158,12 @@ def train(loader, model, criterion, optimizer, device):
         loss.backward()
         optimizer.step()
         train_loss += loss.mean().item()
-        #train_acc += accuracy(output, target)
-        #print(accuracy(output, target.to(device)))
-        #print(accuracy(output, target.to(device))[0] )
-        #print(accuracy(output, target.to(device))[0].item() )
-        #print(type(accuracy(output, target.to(device))))
         train_acc += accuracy(output, target.to(device))[0].item()
-        i += 1
         
-        if ((i% 200)== 0):
-            print('train batch ',batch_i, ' with loss: ', round(train_loss/i,3))
-    train_acc = round((train_acc/i),3)
-    train_loss = round((train_loss/i),3)
+        if ((batch_i % 200)== 0):
+            print('train batch ', batch_i, ' with loss: ', round(train_loss/(batch_i+1),5))
+    train_acc = round((train_acc/(batch_i +1)),5)
+    train_loss = round((train_loss/(batch_i +1)),5)
 
     return train_loss, train_acc
     ############raise NotImplementedError("TODO: training routine")
@@ -175,7 +171,6 @@ def train(loader, model, criterion, optimizer, device):
 
 # validation function. you can change the method's signature.
 def validate(loader, model, criterion, device):
-    i = 0
     val_loss = 0
     val_acc = 0
     with torch.no_grad():        
@@ -183,11 +178,10 @@ def validate(loader, model, criterion, device):
             output = model(data.to(device))
             val_loss += criterion(output, target.to(device)).mean().item()
             val_acc += accuracy(output, target.to(device))[0].item()
-            i += 1
-            if ((i % 200) == 0):
-                print ('validation batch: ', batch_i, ' with loss: ', round(val_loss/i,3))
-    val_acc = round((val_acc/i),3)
-    val_loss = round((val_loss/i),3)
+            if ((batch_i % 200) == 0):
+                print ('validation batch: ', batch_i, ' with loss: ', round(val_loss/(batch_i+1),5))
+    val_acc = round((val_acc/(batch_i+1)),5)
+    val_loss = round((val_loss/(batch_i+1)),5)
     return val_loss, val_acc
     #########raise NotImplementedError("TODO: validation routine")
     # return mean_val_loss, mean_val_accuracy
