@@ -1,4 +1,4 @@
-#results
-data/
-models/
-utils/
+models/*
+data/*
+utils/*
+
