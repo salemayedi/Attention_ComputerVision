@@ -1,5 +1,6 @@
-#models/*
-#data/*
-#utils/*
-#unlabelled_dataset/*
-results/*
+segmentation_dataset/*
+models/*
+data/*
+utils/*
+unlabelled_dataset/*
+#results/*
