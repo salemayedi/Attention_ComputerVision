@@ -6,5 +6,6 @@ utils/*
 results/*
 segmentation_dataset
 segmentation_dataset/
-
+*.log
+*.pyc
 

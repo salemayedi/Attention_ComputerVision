@@ -1,4 +1,4 @@
-raise NotImplementedError("TODO: make the script for running the classical multiclass semantic segmentation")
+#raise NotImplementedError("TODO: make the script for running the classical multiclass semantic segmentation")
 # Use the dt_binary_ss as a starting point for your file
 # start you lr at 0.001, try more if you have time
 # Use DataReaderSemanticSegmentation as dataloader
@@ -60,14 +60,20 @@ def main(args):
     data_root = args.data_folder
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print('#### This is the device used: ', device, '####')
-    import pdb; pdb.set_trace()
-    pretrained_model = ResNet18Backbone(pretrained=False).to(device) 
+    
+    encoder_model = ResNet18Backbone(pretrained=False).to(device) 
     #pretrained_model = None
     #raise NotImplementedError("TODO: build model and load pretrained weights")
-    model = Segmentator(6, pretrained_model.features, img_size).to(device) # 5 + background
+    model = Segmentator(6, encoder_model.features, img_size).to(device) # 5 + background
 
-    #features = list(vgg16(pretrained = True).features)[:23]
-    #model.load_state_dict(torch.load(args.weights_init, map_location = device)['model'], strict=False)
+    pretrained_dict = torch.load(args.weights_init, map_location = device)['model']
+    model_dict = model.state_dict()
+    # filter out unnecessary keys
+    pretrained_dict = {k: v for k, v in pretrained_dict.items() if ((k in model_dict) and (k not in ['decoder.last_conv.6.weight', 'decoder.last_conv.6.bias']))}
+    # overwrite entries in the existing state dict
+    model_dict.update(pretrained_dict) 
+    # load the new state dict
+    model.load_state_dict(model_dict, strict = False)
 
     # dataset
     train_trans, val_trans, train_target_trans, val_target_trans = get_transforms_binary_segmentation(args)
@@ -108,7 +114,7 @@ def main(args):
     train_iou_list = []
     val_loss_list = []
     val_iou_list = []
-    for epoch in range(100):
+    for epoch in range(1):
         logger.info("Epoch {}".format(epoch))
         train_results = train(train_loader, model, criterion, optimizer, logger, device)
         val_results = validate(val_loader, model, criterion, logger, device, epoch)
@@ -158,8 +164,10 @@ def train(loader, model, criterion, optimizer, logger, device):
         loss.backward()
         optimizer.step()
         train_loss += loss.item()
-        train_iou += mIoU(output, target.to(device)).item()
+        train_iou += instance_mIoU(output, target.to(device)).item()
 
+        if batch_i == 1:
+            break
         if ((batch_i % 150)== 0):
             print('train batch ', batch_i, ' with loss: ', round(train_loss/(batch_i+1),5), ' with iou: ', round(train_iou/(batch_i+1),5))
 
@@ -186,7 +194,10 @@ def validate(loader, model, criterion, logger, device, epoch=0):
 
             loss = criterion(output, target.to(device))
             val_loss += loss.mean().item()
-            val_iou += mIoU(output, target.to(device)).item()
+            val_iou += instance_mIoU(output, target.to(device)).item()
+                
+            if batch_i == 1:
+                break
             if ((batch_i % 150)== 0):
                 print('val batch ', batch_i, ' with loss: ', round(val_loss/(batch_i+1),5), ' with iou: ', round(val_iou/(batch_i+1),5))
 
