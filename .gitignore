@@ -2,7 +2,7 @@ segmentation_dataset/*
 models/*
 data/*
 utils/*
-unlabelled_dataset/*
+#unlabelled_dataset/*
 results/*
 
 
