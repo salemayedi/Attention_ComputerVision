@@ -39,6 +39,7 @@ def parse_arguments():
     args.output_folder = check_dir(os.path.join(args.output_root, 'dt_binseg', args.exp_name))
     args.model_folder = check_dir(os.path.join(args.output_folder, "models"))
     args.logs_folder = check_dir(os.path.join(args.output_folder, "logs"))
+    args.plots_folder = check_dir(os.path.join(args.output_folder, "plots"))
 
     return args
 
