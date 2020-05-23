@@ -60,11 +60,14 @@ def main(args):
     data_root = args.data_folder
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print('#### This is the device used: ', device, '####')
+    import pdb; pdb.set_trace()
     pretrained_model = ResNet18Backbone(pretrained=False).to(device) 
-    pretrained_model.load_state_dict(torch.load(args.weights_init, map_location = device), strict=False)
     #pretrained_model = None
     #raise NotImplementedError("TODO: build model and load pretrained weights")
     model = Segmentator(6, pretrained_model.features, img_size).to(device) # 5 + background
+
+    #features = list(vgg16(pretrained = True).features)[:23]
+    #model.load_state_dict(torch.load(args.weights_init, map_location = device)['model'], strict=False)
 
     # dataset
     train_trans, val_trans, train_target_trans, val_target_trans = get_transforms_binary_segmentation(args)
