@@ -92,6 +92,7 @@ def main(args):
     logger.info('val_data {}'.format(val_data.__len__()))
 
     best_val_loss = np.inf
+    best_val_acc = np.inf
     # Train-validate for one epoch. You don't have to run it for 100 epochs, preferably until it starts overfitting.
     train_loss_list = []
     train_acc_list = []
@@ -101,8 +102,10 @@ def main(args):
         print("Epoch {}".format(epoch))
         train_loss, train_acc = train(train_loader, model, criterion, optimizer, device)
         val_loss, val_acc = validate(val_loader, model, criterion, device)
-        print('Epoch: ', epoch, ' val_acc ', val_acc, ' val_loss ', val_loss, ' train_acc: ',train_acc, ' train_loss: ', train_loss )
+        #print('Epoch: ', epoch, ' val_acc ', val_acc, ' val_loss ', val_loss, ' train_acc: ',train_acc, ' train_loss: ', train_loss )
 
+        logger.info("Epoch %d  train_loss %.3f train_acc %.3f val_loss: %.3f val_acc: %.3f" %
+                    (epoch, train_loss, train_acc, val_loss, val_acc))
         train_loss_list.append(train_loss)
         train_acc_list.append(train_acc)
         val_loss_list.append(val_loss)
@@ -118,6 +121,12 @@ def main(args):
             best_val_loss = val_loss
             path_model = os.path.join(args.model_folder , 'checkpoint_best_val_' + str(epoch) +'_.pth')
             torch.save(model.state_dict(), path_model )
+        if val_acc < best_val_acc:
+            best_val_acc = val_acc
+            path_model = os.path.join(args.model_folder , 'checkpoint_best_acc_' + str(epoch) +'_.pth')
+            torch.save(model.state_dict(), path_model )
+            ######raise NotImplementedError("TODO: save model if a new best validation error was reached")
+
             ######raise NotImplementedError("TODO: save model if a new best validation error was reached")
 
         pd.DataFrame({'train_loss':train_loss_list}).to_csv('train_loss.csv', index= False)

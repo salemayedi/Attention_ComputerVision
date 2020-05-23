@@ -50,8 +50,16 @@ def main(args):
     print(val_loader)
     # choose/sample which images you want to compute the NNs of.
     # You can try different ones and pick the most interesting ones.
-    query_indices = [7,8,10,11,54,200,300,400,500,600,1000,95]
+
+    #query_indices = [7,8,10,11,54,200,300,400,500,600,1000,95]
+    query_indices = []
     nns = []
+    list_images = val_loader.image_files
+    for i in range (len(list_images)):
+        if list_images[i] == '173.jpg':
+            query_indices.append(i)
+            break
+    print(list_images[i], i , query_indices)
     
     for idx, img in enumerate(val_loader):
         if idx not in query_indices:
