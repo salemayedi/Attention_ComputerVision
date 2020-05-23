@@ -149,8 +149,9 @@ def train(loader, model, criterion, optimizer, logger, device):
         train_loss += loss.item()
         train_iou += mIoU(output, target.to(device)).item()
 
-        # if batch_i == 1:
-        #     break
+        if ((batch_i % 150)== 0):
+            print('train batch ', batch_i, ' with loss: ', round(train_loss/(batch_i+1),5), ' with iou: ', round(train_iou/(batch_i+1),5))
+
     mean_train_loss = round((train_loss/(batch_i+1)), 5)
     mean_train_iou = round((train_iou/(batch_i+1)), 5)
 
@@ -175,8 +176,8 @@ def validate(loader, model, criterion, logger, device, epoch=0):
             loss = criterion(output, target.to(device))
             val_loss += loss.mean().item()
             val_iou += mIoU(output, target.to(device)).item()
-            # if batch_i == 1:
-            #     break
+            if ((batch_i % 150)== 0):
+                print('val batch ', batch_i, ' with loss: ', round(val_loss/(batch_i+1),5), ' with iou: ', round(val_iou/(batch_i+1),5))
 
     mean_val_loss = round((val_loss/(batch_i+1)), 5)
     mean_val_iou = round((val_iou/(batch_i+1)), 5)
