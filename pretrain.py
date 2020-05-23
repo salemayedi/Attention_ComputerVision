@@ -129,30 +129,15 @@ def main(args):
 
             ######raise NotImplementedError("TODO: save model if a new best validation error was reached")
 
-        pd.DataFrame({'train_loss':train_loss_list}).to_csv('train_loss.csv', index= False)
-        pd.DataFrame({'train_acc':train_acc_list}).to_csv('train_acc.csv', index= False)
-        pd.DataFrame({'val_loss':val_loss_list}).to_csv('val_loss.csv', index= False)
-        pd.DataFrame({'val_acc':val_acc_list}).to_csv('val_acc.csv', index= False)
-
         save_fig (train_loss_list, 'train_loss')
         save_fig (train_acc_list, 'train_acc')
         save_fig (val_loss_list, 'val_loss')
         save_fig (val_acc_list, 'val_acc')
-    #os.path.join(args.plots_folder, 'train_loss.csv')
-    # pd.DataFrame({'train_loss':train_loss_list}).to_csv(args.plots_folder+'\\'+'train_loss.csv', index= False)
-    # pd.DataFrame({'train_acc':train_acc_list}).to_csv(args.plots_folder+'\\'+'train_acc.csv', index= False)
-    # pd.DataFrame({'val_loss':val_loss_list}).to_csv(args.plots_folder+'\\'+'val_loss.csv', index= False)
-    # pd.DataFrame({'val_acc':val_acc_list}).to_csv(args.plots_folder+'\\'+'val_acc.csv', index= False)
-    
-    # pd.DataFrame({'train_loss':train_loss_list}).to_csv('train_loss.csv', index= False)
-    # pd.DataFrame({'train_acc':train_acc_list}).to_csv('train_acc.csv', index= False)
-    # pd.DataFrame({'val_loss':val_loss_list}).to_csv('val_loss.csv', index= False)
-    # pd.DataFrame({'val_acc':val_acc_list}).to_csv('val_acc.csv', index= False)
 
-    # save_fig (train_loss_list, 'train_loss.png')
-    # save_fig (train_acc_list, 'train_acc.png')
-    # save_fig (val_loss_list, 'val_loss.png')
-    # save_fig (val_acc_list, 'val_acc.png')
+        pd.DataFrame({'train_loss':train_loss_list}).to_csv(os.path.join(args.plots_folder, 'train_loss.csv'), index= False)
+        pd.DataFrame({'train_acc':train_acc_list}).to_csv(os.path.join(args.plots_folder, 'train_acc.csv'), index= False)
+        pd.DataFrame({'val_loss':val_loss_list}).to_csv(os.path.join(args.plots_folder, 'val_loss.csv'), index= False)
+        pd.DataFrame({'val_acc':val_acc_list}).to_csv(os.path.join(args.plots_folder, 'val_acc.csv'), index= False)
 
 
 # train one epoch over the whole training dataset. You can change the method's signature.
