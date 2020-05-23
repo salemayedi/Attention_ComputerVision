@@ -12,6 +12,8 @@ from models.second_segmentation import Segmentator
 from data.transforms import get_transforms_binary_segmentation
 from models.pretraining_backbone import ResNet18Backbone
 from data.segmentation import DataReaderBinarySegmentation
+import pandas as pd
+import matplotlib.pyplot as plt
 
 set_random_seed(0)
 global_step = 0
@@ -51,7 +53,7 @@ def main(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print('#### This is the device used: ', device, '####')
     pretrained_model = ResNet18Backbone(pretrained=False).to(device) 
-    pretrained_model.load_state_dict(torch.load(args.weights_init, map_location = device)['model'] , strict=False)
+    pretrained_model.load_state_dict(torch.load(args.weights_init, map_location = device), strict=False)
     #pretrained_model = None
     #raise NotImplementedError("TODO: build model and load pretrained weights")
     model = Segmentator(2, pretrained_model.features, img_size).to(device)
@@ -90,24 +92,44 @@ def main(args):
 
     best_val_loss = np.inf
     best_val_miou = 0.0
+
+    train_loss_list = []
+    train_iou_list = []
+    val_loss_list = []
+    val_iou_list = []
     for epoch in range(100):
         logger.info("Epoch {}".format(epoch))
         train_results = train(train_loader, model, criterion, optimizer, logger, device)
         val_results = validate(val_loader, model, criterion, logger, device, epoch)
 
-        # TODO save model
-        path_model = os.path.join(args.model_folder , 'checkpoint_' + str(epoch) +'_.pth')
-        torch.save(model.state_dict(), path_model )
-        import pdb; pdb.set_trace()
-
         mean_val_loss, mean_val_iou = val_results
         mean_train_loss, mean_train_iou = train_results
 
+        train_loss_list.append(mean_train_loss)
+        train_iou_list.append(mean_train_iou)
+        val_loss_list.append(mean_val_loss)
+        val_iou_list.append(mean_val_iou)
+
+        # TODO save model
+        save_model(model, optimizer, args, epoch, mean_val_loss, mean_train_loss, logger, best=False)
+        # path_model = os.path.join(args.model_folder , 'checkpoint_' + str(epoch) +'_.pth')
+        # torch.save(model.state_dict(), path_model )
+        # import pdb; pdb.set_trace()
         if mean_val_loss < best_val_loss:
             best_val_loss = mean_val_loss
-            path_model = os.path.join(args.model_folder , 'checkpoint_best_val_' + str(epoch) +'_.pth')
-            torch.save(model.state_dict(), path_model )
+            save_model(model, optimizer, args, epoch, mean_val_loss, mean_train_loss, logger, best=True)
         
+        # save the data
+        save_fig (train_loss_list, 'train_loss')
+        save_fig (train_iou_list, 'train_acc')
+        save_fig (val_loss_list, 'val_loss')
+        save_fig (val_iou_list, 'val_acc')
+
+        pd.DataFrame({'train_loss':train_loss_list}).to_csv(os.path.join(args.plots_folder, 'train_loss.csv'), index= False)
+        pd.DataFrame({'train_iou':train_iou_list}).to_csv(os.path.join(args.plots_folder, 'train_iou.csv'), index= False)
+        pd.DataFrame({'val_loss':val_loss_list}).to_csv(os.path.join(args.plots_folder, 'val_loss.csv'), index= False)
+        pd.DataFrame({'val_iou':val_iou_list}).to_csv(os.path.join(args.plots_folder, 'val_iou.csv'), index= False)
+
         
 
 
@@ -127,8 +149,8 @@ def train(loader, model, criterion, optimizer, logger, device):
         train_loss += loss.item()
         train_iou += mIoU(output, target.to(device)).item()
 
-        if batch_i == 1:
-            break
+        # if batch_i == 1:
+        #     break
     mean_train_loss = round((train_loss/(batch_i+1)), 5)
     mean_train_iou = round((train_iou/(batch_i+1)), 5)
 
@@ -153,8 +175,8 @@ def validate(loader, model, criterion, logger, device, epoch=0):
             loss = criterion(output, target.to(device))
             val_loss += loss.mean().item()
             val_iou += mIoU(output, target.to(device)).item()
-            if batch_i == 1:
-                break
+            # if batch_i == 1:
+            #     break
 
     mean_val_loss = round((val_loss/(batch_i+1)), 5)
     mean_val_iou = round((val_iou/(batch_i+1)), 5)
@@ -167,7 +189,7 @@ def validate(loader, model, criterion, logger, device, epoch=0):
 def save_model(model, optimizer, args, epoch, val_loss, val_iou, logger, best=False):
     # save model
     add_text_best = 'BEST' if best else ''
-    logger.info('==> Saving '+add_text_best+' ... epoch{} loss{:.03f} miou{:.03f} '.format(epoch, val_loss, val_iou))
+    logger.info('==> Saving '+add_text_best+' ... epoch {} loss {:.03f} miou {:.03f} '.format(epoch, val_loss, val_iou))
     state = {
         'opt': args,
         'epoch': epoch,
@@ -179,8 +201,17 @@ def save_model(model, optimizer, args, epoch, val_loss, val_iou, logger, best=Fa
     if best:
         torch.save(state, os.path.join(args.model_folder, 'ckpt_best.pth'))
     else:
-        torch.save(state, os.path.join(args.model_folder, 'ckpt_epoch{}_loss{:.03f}_miou{:.03f}.pth'.format(epoch, val_loss, val_iou)))
+        torch.save(state, os.path.join(args.model_folder, 'ckpt_epoch {}_loss {:.03f}_miou {:.03f}.pth'.format(epoch, val_loss, val_iou)))
 
+
+def save_fig (train_list, name):
+    plt.plot(train_list)
+    plt.xlabel('epochs')
+    plt.ylabel(name)
+    if not os.path.exists(args.plots_folder):
+        os.makedirs(args.plots_folder)
+    path = os.path.join(args.plots_folder, name+'.png')
+    plt.savefig(path)
 
 if __name__ == '__main__':
     args = parse_arguments()

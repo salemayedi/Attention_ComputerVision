@@ -4,12 +4,13 @@ import argparse
 import torch
 from pprint import pprint
 from torchvision.transforms import *
-from utils import check_dir
+from utils import check_dir, get_logger
 from models.pretraining_backbone import ResNet18Backbone
 from data.pretraining import DataReaderPlainImg
 from sklearn.neighbors import NearestNeighbors
 from data.pretraining import DataReaderPlainImg, custom_collate
 import numpy as np
+from torchvision.utils import save_image
 
 
 def parse_arguments():
@@ -31,13 +32,14 @@ def parse_arguments():
 
 def main(args):
     # model
+    logger = get_logger(args.output_folder, "nearest_neighbors")
     #raise NotImplementedError("TODO: build model and load weights snapshot")
     # Device configuration
     data_root = args.data_folder
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print('#### This is the device used: ', device, '####')
     model = ResNet18Backbone(pretrained=False).to(device) 
-    model.load_state_dict(torch.load(args.weights_init, map_location = device)['model'] , strict=False)
+    model.load_state_dict(torch.load(args.weights_init, map_location = device) , strict=False)
     # dataset
     val_transform = Compose([Resize(args.size), CenterCrop((args.size, args.size)), ToTensor()])
     val_data = DataReaderPlainImg(os.path.join(data_root, str(args.size), "val"), transform=val_transform)
@@ -48,14 +50,27 @@ def main(args):
     print(val_loader)
     # choose/sample which images you want to compute the NNs of.
     # You can try different ones and pick the most interesting ones.
-    query_indices = [5]
+    query_indices = [7,8,10,11,54,200,300,400,500,600,1000,95]
     nns = []
+    
     for idx, img in enumerate(val_loader):
         if idx not in query_indices:
             continue
         print("Computing NNs for sample {}".format(idx))
         closest_idx, closest_dist, images_names = find_nn(model, img, val_loader, 5, device)
         #raise NotImplementedError("TODO: retrieve the original NN images, save them and log the results.")
+        logger.info("names of closest images are %s " % (str(images_names)))
+        logger.info("distances to the closest images are %s " % (str(closest_dist)))
+        #import pdb; pdb.set_trace()
+        for i in range(1, len(images_names)):
+            image_path = check_dir(os.path.join(args.output_folder, str(idx),'auto_algorithm' ))
+            
+            save_image(val_loader[closest_idx[i]], os.path.join( image_path, 'distance_rank_'+str(i) + ' ' + images_names[i]) ) 
+        
+        save_image(img, os.path.join(image_path, 'source_image_' +images_names[0]))
+        # for im_idx in images_names:
+        #     save_image(val_loader.dataset[im_idx], "%s/%i/%s" % (args.output_folder, idx, im_idx ) )
+        #save_image(img, "%s/%i/source_image_%s" % (args.output_folder, idx, idx))
 
 
 def find_nn(model, query_img, loader, k, device):
@@ -77,12 +92,14 @@ def find_nn(model, query_img, loader, k, device):
     with torch.no_grad():
         output_network = model(loaded_data)
     
-    nbrs = NearestNeighbors(n_neighbors=k+1, algorithm='ball_tree', metric = 'euclidean').fit(output_network.numpy())
+    nbrs = NearestNeighbors(n_neighbors=k+1, algorithm='auto', metric = 'euclidean').fit(output_network.numpy())
     distances, indices = nbrs.kneighbors(output_network)
 
     #import pdb; pdb.set_trace()
     images_names = [ list_images[indices[idx][i]] for i in range(len(indices[idx]))]
     
+    print(idx, list_images[idx])
+    #print(len(indices[idx]), len(distances[idx]), len(images_names))
     return indices[idx].tolist(), distances[idx].tolist(), images_names
 
     #raise NotImplementedError("TODO: nearest neighbors retrieval")
