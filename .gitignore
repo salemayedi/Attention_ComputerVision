@@ -1,8 +1,10 @@
-segmentation_dataset/*
+segmentation_dataset/*.jpg
 models/*
 data/*
 utils/*
 #unlabelled_dataset/*
 results/*
+segmentation_dataset
+segmentation_dataset/
 
 
