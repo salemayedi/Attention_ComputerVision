@@ -98,7 +98,7 @@ def main(args):
     train_acc_list = []
     val_loss_list = []
     val_acc_list = []
-    for epoch in range(50):
+    for epoch in range(40):
         print("Epoch {}".format(epoch))
         train_loss, train_acc = train(train_loader, model, criterion, optimizer, device)
         val_loss, val_acc = validate(val_loader, model, criterion, device)
