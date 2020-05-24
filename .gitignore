@@ -3,7 +3,7 @@ models/*
 data/*
 utils/*
 #unlabelled_dataset/*
-results/*
+#results/*
 segmentation_dataset
 segmentation_dataset/
 *.log

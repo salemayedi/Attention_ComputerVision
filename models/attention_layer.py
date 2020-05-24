@@ -52,6 +52,23 @@ class DotProdAttention(nn.Module):
         raise NotImplementedError("TODO: Implement attention layer")
 
     def forward(self, encoder_output, hidden_state):
+        # encoder_output ------ torch.Size([24, 49, 2048])
+        # hidden_state ------ torch.Size([24, 512])
+        U_h = self.U(hidden_state).unsqueeze(1)
+        # Uh ------ torch.Size([24, 1, 512])
+        W_s = self.W(encoder_output)
+        # Ws (s=encoder_output) ------ torch.Size([24, 49, 512])
+
+        att = self.tanh(torch.matmul(W_s, U_h.permute(0,2,1)))
+
+
+        # a = tanh(Ws + Uh) ------ torch.Size([24, 49, 1])
+        e = self.v(att).squeeze(2)
+        # e = V^tanh(Ws + Uh) ------ torch.Size([24, 49])
+        alpha = self.softmax(e)
+        # alpha ------ torch.Size([24, 49])
+        context = (encoder_output * alpha.unsqueeze(2))
+        # context ------ torch.Size([24, 49, 2048])
         # Verify sizes
         return context, alpha
 
