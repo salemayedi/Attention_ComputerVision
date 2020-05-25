@@ -52,7 +52,7 @@ def main(args):
     pretrained_model = ResNet18Backbone(False)
     # TODO: Complete the documentation for AttSegmentator model
     #raise NotImplementedError("TODO: Build model AttSegmentator model")
-    model = AttSegmentator(6, pretrained_model.features, att_type = 'dotprod', img_size )
+    model = AttSegmentator(5, pretrained_model.features, att_type = 'dotprod', img_size )
 
     if os.path.isfile(args.pretrained_model_path):
         model = load_from_weights(model, args.pretrained_model_path, logger)
