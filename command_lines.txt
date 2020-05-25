@@ -8,7 +8,11 @@ nearest neighbors:
 python nearest_neighbors.py unlabelled_dataset\crops\images --weights-init results\pretrain\lr0.005_bs8_size256_\models\checkpoint_best_val_3_.pth
 
 segmentation:
-python dt_binary_ss.py segmentation_dataset\COCO_mini5class_medium results\pretrain\lr0.005_bs8_size256_\models\checkpoint_best_val_3_.pth
+python dt_binary_ss.py segmentation_dataset\COCO_mini5class_medium results\pretrain\lr0.005_bs32_size256_\models\checkpoint_best_val_1_.pth
+OR 
+python dt_binary_ss.py segmentation_dataset\COCO_mini5class_medium results\pretrain\lr0.005_bs32_size256_\modelscheckpoint_best_acc_25_.pth
 
 
-python dt_multiclass_ss.py segmentation_dataset\COCO_mini5class_medium ckpt_best.pth
+
+multiclass
+python dt_multiclass_ss.py segmentation_dataset\COCO_mini5class_medium results\pretrain\lr0.005_bs32_size256_\models\checkpoint_best_val_1_.pth

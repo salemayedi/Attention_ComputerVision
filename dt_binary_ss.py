@@ -128,9 +128,9 @@ def main(args):
         
         # save the data
         save_fig (train_loss_list, 'train_loss')
-        save_fig (train_iou_list, 'train_acc')
+        save_fig (train_iou_list, 'train_iou')
         save_fig (val_loss_list, 'val_loss')
-        save_fig (val_iou_list, 'val_acc')
+        save_fig (val_iou_list, 'val_iou')
 
         pd.DataFrame({'train_loss':train_loss_list}).to_csv(os.path.join(args.plots_folder, 'train_loss.csv'), index= False)
         pd.DataFrame({'train_iou':train_iou_list}).to_csv(os.path.join(args.plots_folder, 'train_iou.csv'), index= False)
@@ -196,8 +196,12 @@ def validate(loader, model, criterion, logger, device, epoch=0):
 
 def save_model(model, optimizer, args, epoch, val_loss, val_iou, logger, best_iou=False, best_loss = False):
     # save model
-    add_text_best = 'BEST_iou' if best_iou else ''
-    add_text_best = 'BEST_loss' if best_loss else ''
+    if best_iou:
+        add_text_best = 'BEST_iou'
+    elif best_loss:
+        add_text_best = 'BEST_loss'
+    else:
+        add_text_best = ''
     logger.info('==> Saving '+add_text_best+' ... epoch {} loss {:.03f} miou {:.03f} '.format(epoch, val_loss, val_iou))
     state = {
         'opt': args,

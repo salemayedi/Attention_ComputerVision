@@ -49,35 +49,31 @@ class AdditiveAttention(nn.Module):
 class DotProdAttention(nn.Module):
     def __init__(self, encoder_dim):
         super(DotProdAttention, self).__init__()
-        raise NotImplementedError("TODO: Implement attention layer")
+        self.softmax = nn.Softmax(1)
+        #raise NotImplementedError("TODO: Implement attention layer")
 
     def forward(self, encoder_output, hidden_state):
-        # encoder_output ------ torch.Size([24, 49, 2048])
-        # hidden_state ------ torch.Size([24, 512])
-        U_h = self.U(hidden_state).unsqueeze(1)
-        # Uh ------ torch.Size([24, 1, 512])
-        W_s = self.W(encoder_output)
-        # Ws (s=encoder_output) ------ torch.Size([24, 49, 512])
-
-        att = self.tanh(torch.matmul(W_s, U_h.permute(0,2,1)))
-
-
-        # a = tanh(Ws + Uh) ------ torch.Size([24, 49, 1])
-        e = self.v(att).squeeze(2)
-        # e = V^tanh(Ws + Uh) ------ torch.Size([24, 49])
+        # encoder_output ------ torch.Size([2, 256, 512])
+        # hidden_state ------ torch.Size([2, 512])
+        hidden_state = hidden_state.unsqueeze(1) # torch.Size([2, 1, 512])
+        hidden_state = hidden_state.permute(0,2,1) # torch.Size([2, 512, 1])
+        att = torch.matmul(encoder_output, hidden_state)  # torch.Size([2, 256, 512]) * torch.Size([2, 512, 1])  
+                                        # = torch.Size([2, 256, 1])
+        e = att.squeeze(2) #  torch.Size([2, 256])
         alpha = self.softmax(e)
-        # alpha ------ torch.Size([24, 49])
+        # alpha ------ torch.Size([2, 256])
         context = (encoder_output * alpha.unsqueeze(2))
-        # context ------ torch.Size([24, 49, 2048])
-        # Verify sizes
+        # context ------ torch.Size([2, 256, 512])
+        
         return context, alpha
 
 if __name__ == "__main__":
-    model = Attention(512, 'additive').cuda()
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = Attention(512, 'dotprod').to(device)
     model.eval()
     print(model)
-    encoder_output = torch.randn(2, 256, 512).cuda()
-    v_embedding = torch.randn(2, 512).cuda()
+    encoder_output = torch.randn(2, 256, 512).to(device)
+    v_embedding = torch.randn(2, 512).to(device)
     with torch.no_grad():
         output, alpha = model.forward(encoder_output, v_embedding)
     print(output.size())

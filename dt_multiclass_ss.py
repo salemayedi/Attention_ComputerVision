@@ -31,7 +31,7 @@ def parse_arguments():
     parser.add_argument('data_folder', type=str, help="folder containing the data")
     parser.add_argument('weights_init', type=str, default="ImageNet")
     parser.add_argument('--output-root', type=str, default='results')
-    parser.add_argument('--lr', type=float, default=0.01, help='learning rate')
+    parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
     parser.add_argument('--bs', type=int, default=32, help='batch_size')
     parser.add_argument('--size', type=int, default=256, help='image size')
     parser.add_argument('--snapshot-freq', type=int, default=1, help='how often to save models')
@@ -128,19 +128,26 @@ def main(args):
         val_iou_list.append(mean_val_iou)
 
         # TODO save model
-        save_model(model, optimizer, args, epoch, mean_val_loss, mean_train_loss, logger, best=False)
+        save_model(model, optimizer, args, epoch, mean_val_loss, mean_val_iou, logger, best=False)
         # path_model = os.path.join(args.model_folder , 'checkpoint_' + str(epoch) +'_.pth')
         # torch.save(model.state_dict(), path_model )
         # import pdb; pdb.set_trace()
-        if mean_val_loss < best_val_loss:
+        if mean_val_iou > best_val_miou:
+            best_val_miou = mean_val_iou
+            save_model(model, optimizer, args, epoch+1, mean_val_loss, mean_val_iou, logger, best_iou=True, best_loss = False)
+        
+        elif mean_val_loss < best_val_loss:
             best_val_loss = mean_val_loss
-            save_model(model, optimizer, args, epoch, mean_val_loss, mean_train_loss, logger, best=True)
+            save_model(model, optimizer, args, epoch+1, mean_val_loss, mean_val_iou, logger, best_iou=False, best_loss = True)
+        
+        elif ((epoch+1)%10 == 0):
+            save_model(model, optimizer, args, epoch+1, mean_val_loss, mean_val_iou, logger, best_iou=False, best_loss = False)
         
         # save the data
         save_fig (train_loss_list, 'train_loss')
-        save_fig (train_iou_list, 'train_acc')
+        save_fig (train_iou_list, 'train_iou')
         save_fig (val_loss_list, 'val_loss')
-        save_fig (val_iou_list, 'val_acc')
+        save_fig (val_iou_list, 'val_iou')
 
         pd.DataFrame({'train_loss':train_loss_list}).to_csv(os.path.join(args.plots_folder, 'train_loss.csv'), index= False)
         pd.DataFrame({'train_iou':train_iou_list}).to_csv(os.path.join(args.plots_folder, 'train_iou.csv'), index= False)
@@ -169,7 +176,7 @@ def train(loader, model, criterion, optimizer, logger, device):
         if batch_i == 1:
             break
         if ((batch_i % 150)== 0):
-            print('train batch ', batch_i, ' with loss: ', round(train_loss/(batch_i+1),5), ' with iou: ', round(train_iou/(batch_i+1),5))
+            print('train batch ', batch_i, ' with train_loss: ', round(train_loss/(batch_i+1),5), ' with train_iou: ', round(train_iou/(batch_i+1),5))
 
     mean_train_loss = round((train_loss/(batch_i+1)), 5)
     mean_train_iou = round((train_iou/(batch_i+1)), 5)
@@ -199,7 +206,7 @@ def validate(loader, model, criterion, logger, device, epoch=0):
             if batch_i == 1:
                 break
             if ((batch_i % 150)== 0):
-                print('val batch ', batch_i, ' with loss: ', round(val_loss/(batch_i+1),5), ' with iou: ', round(val_iou/(batch_i+1),5))
+                print('val batch ', batch_i, ' with val_loss: ', round(val_loss/(batch_i+1),5), ' with val_iou: ', round(val_iou/(batch_i+1),5))
 
     mean_val_loss = round((val_loss/(batch_i+1)), 5)
     mean_val_iou = round((val_iou/(batch_i+1)), 5)
@@ -209,9 +216,14 @@ def validate(loader, model, criterion, logger, device, epoch=0):
     return (mean_val_loss, mean_val_iou)
 
 
-def save_model(model, optimizer, args, epoch, val_loss, val_iou, logger, best=False):
+def save_model(model, optimizer, args, epoch, val_loss, val_iou, logger, best_iou=False, best_loss = False):
     # save model
-    add_text_best = 'BEST' if best else ''
+    if best_iou:
+        add_text_best = 'BEST_iou'
+    elif best_loss:
+        add_text_best = 'BEST_loss'
+    else:
+        add_text_best = ''
     logger.info('==> Saving '+add_text_best+' ... epoch {} loss {:.03f} miou {:.03f} '.format(epoch, val_loss, val_iou))
     state = {
         'opt': args,
@@ -221,13 +233,16 @@ def save_model(model, optimizer, args, epoch, val_loss, val_iou, logger, best=Fa
         'loss': val_loss,
         'miou': val_iou
     }
-    if best:
-        torch.save(state, os.path.join(args.model_folder, 'ckpt_best.pth'))
+    if best_iou:
+        torch.save(state, os.path.join(args.model_folder, 'ckpt_' +add_text_best+ '_{}.pth'.format(epoch)))
+    elif best_loss:
+        torch.save(state, os.path.join(args.model_folder, 'ckpt_' +add_text_best+ '_{}.pth'.format(epoch)))
     else:
         torch.save(state, os.path.join(args.model_folder, 'ckpt_epoch {}_loss {:.03f}_miou {:.03f}.pth'.format(epoch, val_loss, val_iou)))
 
 
 def save_fig (train_list, name):
+    plt.figure()
     plt.plot(train_list)
     plt.xlabel('epochs')
     plt.ylabel(name)
