@@ -4,6 +4,7 @@ data/*
 utils/*
 unlabelled_dataset/*
 results/pretrain/*
+results/*
 #segmentation_dataset
 #segmentation_dataset/
 *.log
