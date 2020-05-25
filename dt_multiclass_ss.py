@@ -128,7 +128,6 @@ def main(args):
         val_iou_list.append(mean_val_iou)
 
         # TODO save model
-        save_model(model, optimizer, args, epoch, mean_val_loss, mean_val_iou, logger, best=False)
         # path_model = os.path.join(args.model_folder , 'checkpoint_' + str(epoch) +'_.pth')
         # torch.save(model.state_dict(), path_model )
         # import pdb; pdb.set_trace()
