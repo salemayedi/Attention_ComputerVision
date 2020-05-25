@@ -13,6 +13,7 @@ from torch.utils.tensorboard import SummaryWriter
 from data.transforms import get_transforms_binary_segmentation
 from models.pretraining_backbone import ResNet18Backbone
 from data.segmentation import DataReaderSingleClassSemanticSegmentationVector, DataReaderSemanticSegmentationVector
+from dt_multiclass_ss import save_model, save_fig
 
 set_random_seed(0)
 global_step = 0
@@ -50,8 +51,8 @@ def main(args):
     # model
     pretrained_model = ResNet18Backbone(False)
     # TODO: Complete the documentation for AttSegmentator model
-    raise NotImplementedError("TODO: Build model AttSegmentator model")
-    model = None
+    #raise NotImplementedError("TODO: Build model AttSegmentator model")
+    model = AttSegmentator(6, pretrained_model.features, att_type = 'dotprod', img_size )
 
     if os.path.isfile(args.pretrained_model_path):
         model = load_from_weights(model, args.pretrained_model_path, logger)
@@ -85,10 +86,10 @@ def main(args):
 
 
     # TODO: loss
-    criterion = None
+    criterion = torch.nn.CrossEntropyLoss()
     # TODO: SGD optimizer (see pretraining)
-    optimizer = None
-    raise NotImplementedError("TODO: loss function and SGD optimizer")
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=1e-4)
+    #raise NotImplementedError("TODO: loss function and SGD optimizer")
 
     expdata = "  \n".join(["{} = {}".format(k, v) for k, v in vars(args).items()])
     logger.info(expdata)
@@ -97,13 +98,47 @@ def main(args):
 
     best_val_loss = np.inf
     best_val_miou = 0.0
+
+    train_loss_list = []
+    train_iou_list = []
+    val_loss_list = []
+    val_iou_list = []
     for epoch in range(100):
         logger.info("Epoch {}".format(epoch))
-        train(train_loader, model, criterion, optimizer, log, logger)
+        train_loss, train_iou = train(train_loader, model, criterion, optimizer, log, logger)
         val_loss, val_iou = validate(val_loader, model, criterion, log, logger, epoch)
 
         # TODO save model
-        raise NotImplementedError("TODO: implement the code for saving the model")
+        #raise NotImplementedError("TODO: implement the code for saving the model")
+        train_loss_list.append(train_loss)
+        train_iou_list.append(train_iou)
+        val_loss_list.append(val_loss)
+        val_iou_list.append(val_iou)
+
+        if val_iou > best_val_miou:
+            best_val_miou = val_iou
+            save_model(model, optimizer, args, epoch+1, val_loss, val_iou, logger, best_iou=True, best_loss = False)
+        
+        elif val_loss < best_val_loss:
+            best_val_loss = val_loss
+            save_model(model, optimizer, args, epoch+1, val_loss, val_iou, logger, best_iou=False, best_loss = True)
+        
+        elif ((epoch+1)%10 == 0):
+            save_model(model, optimizer, args, epoch+1, val_loss, val_iou, logger, best_iou=False, best_loss = False)
+        
+        # save the data
+        save_fig (train_loss_list, 'train_loss')
+        save_fig (train_iou_list, 'train_iou')
+        save_fig (val_loss_list, 'val_loss')
+        save_fig (val_iou_list, 'val_iou')
+
+        pd.DataFrame({'train_loss':train_loss_list}).to_csv(os.path.join(args.plots_folder, 'train_loss.csv'), index= False)
+        pd.DataFrame({'train_iou':train_iou_list}).to_csv(os.path.join(args.plots_folder, 'train_iou.csv'), index= False)
+        pd.DataFrame({'val_loss':val_loss_list}).to_csv(os.path.join(args.plots_folder, 'val_loss.csv'), index= False)
+        pd.DataFrame({'val_iou':val_iou_list}).to_csv(os.path.join(args.plots_folder, 'val_iou.csv'), index= False)
+
+
+
 
 def train(loader, model, criterion, optimizer, log, logger):
     logger.info("Training")
@@ -144,6 +179,7 @@ def train(loader, model, criterion, optimizer, log, logger):
         batch_time = time.time()
     time_txt = "batch time: {:.2f} total time: {:.2f}".format(time_meter.mean, time.time()-start_time)
     logger.info(time_txt)
+    return loss_meter.mean, iou_meter.mean
 
 def validate(loader, model, criterion, log, logger, epoch=0):
     logger.info("Validating Epoch {}".format(epoch))

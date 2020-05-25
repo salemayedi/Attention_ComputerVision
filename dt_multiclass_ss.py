@@ -114,7 +114,7 @@ def main(args):
     train_iou_list = []
     val_loss_list = []
     val_iou_list = []
-    for epoch in range(1):
+    for epoch in range(100):
         logger.info("Epoch {}".format(epoch))
         train_results = train(train_loader, model, criterion, optimizer, logger, device)
         val_results = validate(val_loader, model, criterion, logger, device, epoch)
@@ -172,9 +172,7 @@ def train(loader, model, criterion, optimizer, logger, device):
         train_loss += loss.item()
         train_iou += instance_mIoU(output, target.to(device)).item()
 
-        if batch_i == 1:
-            break
-        if ((batch_i % 150)== 0):
+        if ((batch_i % 200)== 0):
             print('train batch ', batch_i, ' with train_loss: ', round(train_loss/(batch_i+1),5), ' with train_iou: ', round(train_iou/(batch_i+1),5))
 
     mean_train_loss = round((train_loss/(batch_i+1)), 5)
@@ -190,21 +188,19 @@ def validate(loader, model, criterion, logger, device, epoch=0):
     model.eval()
     val_loss = 0
     val_iou = 0
-    with torch.no_grad():
-        for batch_i, (data, target) in enumerate(loader):
+    for batch_i, (data, target) in enumerate(loader):
+        with torch.no_grad():
             output = model(data.to(device))
 
             target = target * 255
-            target = torch.nn.functional.interpolate(target, ( output.shape[2], output.shape[3]) )
+            target = torch.nn.functional.interpolate(target, size=( output.shape[2], output.shape[3]) )
             target = torch.squeeze(target,1).long()
 
             loss = criterion(output, target.to(device))
             val_loss += loss.mean().item()
             val_iou += instance_mIoU(output, target.to(device)).item()
                 
-            if batch_i == 1:
-                break
-            if ((batch_i % 150)== 0):
+            if ((batch_i % 20)== 0):
                 print('val batch ', batch_i, ' with val_loss: ', round(val_loss/(batch_i+1),5), ' with val_iou: ', round(val_iou/(batch_i+1),5))
 
     mean_val_loss = round((val_loss/(batch_i+1)), 5)

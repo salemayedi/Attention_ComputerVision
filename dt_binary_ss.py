@@ -172,8 +172,8 @@ def validate(loader, model, criterion, logger, device, epoch=0):
     model.eval()
     val_loss = 0
     val_iou = 0
-    with torch.no_grad():
-        for batch_i, (data, target) in enumerate(loader):
+    for batch_i, (data, target) in enumerate(loader):
+        with torch.no_grad():
             output = model(data.to(device))
 
             target = target * 255
