@@ -200,7 +200,7 @@ def validate(loader, model, criterion, logger, device, epoch=0):
             val_loss += loss.mean().item()
             val_iou += instance_mIoU(output, target.to(device)).item()
                 
-            if ((batch_i % 20)== 0):
+            if ((batch_i % 200)== 0):
                 print('val batch ', batch_i, ' with val_loss: ', round(val_loss/(batch_i+1),5), ' with val_iou: ', round(val_iou/(batch_i+1),5))
 
     mean_val_loss = round((val_loss/(batch_i+1)), 5)
