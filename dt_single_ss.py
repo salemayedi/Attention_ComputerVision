@@ -174,12 +174,12 @@ def train(loader, model, criterion, optimizer, logger, device, epoch = 0):
         iou_meter.add(iou)
         time_meter.add(time.time()-batch_time)
 
-        if idx % 200 == 0 or idx == len(loader)-1:
+        if idx % 200 == 0: #or idx == len(loader)-1:
             text_print = "Epoch {:.4f} Avg loss = {:.4f} mIoU = {:.4f} Time {:.2f} (Total:{:.2f}) Progress {}/{}".format(
                         epoch, loss_meter.mean, iou_meter.mean, time_meter.mean, time.time()-start_time, idx, int(steps_per_epoch))
             logger.info(text_print)
-            loss_meter.reset()
-            iou_meter.reset()
+            # loss_meter.reset()
+            # iou_meter.reset()
 
         batch_time = time.time()
     time_txt = "batch time: {:.2f} total time: {:.2f}".format(time_meter.mean, time.time()-start_time)
@@ -208,6 +208,10 @@ def validate(loader, model, criterion, logger, device, epoch=0):
 
             loss_meter.add(loss.item())
             iou_meter.add(iou)
+            if idx % 200 == 0: #or idx == len(loader)-1:
+                text_print = "Epoch {:.4f} Avg loss = {:.4f} mIoU = {:.4f} Time {:.2f} (Total:{:.2f}) Progress {}/{}".format(
+                            epoch, loss_meter.mean, iou_meter.mean, time_meter.mean, time.time()-start_time, idx, int(steps_per_epoch))
+                logger.info(text_print)
 
     text_print = "Epoch {} Avg loss = {:.4f} mIoU = {:.4f} Time {:.2f}".format(epoch, loss_meter.mean, iou_meter.mean, time.time()-start_time)
     logger.info(text_print)
