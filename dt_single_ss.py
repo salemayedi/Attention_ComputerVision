@@ -13,7 +13,7 @@ from models.att_segmentation import AttSegmentator
 from data.transforms import get_transforms_binary_segmentation
 from models.pretraining_backbone import ResNet18Backbone
 from data.segmentation import DataReaderSingleClassSemanticSegmentationVector, DataReaderSemanticSegmentationVector
-from dt_multiclass_ss import save_model, save_fig
+import matplotlib.pyplot as plt
 
 set_random_seed(0)
 global_step = 0
@@ -40,7 +40,7 @@ def parse_arguments():
     args.model_folder = check_dir(os.path.join(args.output_folder, "models"))
     args.logs_folder = check_dir(os.path.join(args.output_folder, "logs"))
     args.plots_folder = check_dir(os.path.join(args.output_folder, "plots"))
-    
+
     return args
 
 
@@ -208,6 +208,41 @@ def validate(loader, model, criterion, logger, device, epoch=0):
     text_print = "Epoch {} Avg loss = {:.4f} mIoU = {:.4f} Time {:.2f}".format(epoch, loss_meter.mean, iou_meter.mean, time.time()-start_time)
     logger.info(text_print)
     return loss_meter.mean, iou_meter.mean
+
+def save_model(model, optimizer, args, epoch, val_loss, val_iou, logger, best_iou=False, best_loss = False):
+    # save model
+    if best_iou:
+        add_text_best = 'BEST_iou'
+    elif best_loss:
+        add_text_best = 'BEST_loss'
+    else:
+        add_text_best = ''
+    logger.info('==> Saving '+add_text_best+' ... epoch {} loss {:.03f} miou {:.03f} '.format(epoch, val_loss, val_iou))
+    state = {
+        'opt': args,
+        'epoch': epoch,
+        'model': model.state_dict(),
+        'optimizer': optimizer.state_dict(),
+        'loss': val_loss,
+        'miou': val_iou
+    }
+    if best_iou:
+        torch.save(state, os.path.join(args.model_folder, 'ckpt_' +add_text_best+ '_{}.pth'.format(epoch)))
+    elif best_loss:
+        torch.save(state, os.path.join(args.model_folder, 'ckpt_' +add_text_best+ '_{}.pth'.format(epoch)))
+    else:
+        torch.save(state, os.path.join(args.model_folder, 'ckpt_epoch {}_loss {:.03f}_miou {:.03f}.pth'.format(epoch, val_loss, val_iou)))
+
+
+def save_fig (train_list, name):
+    plt.figure()
+    plt.plot(train_list)
+    plt.xlabel('epochs')
+    plt.ylabel(name)
+    if not os.path.exists(args.plots_folder):
+        os.makedirs(args.plots_folder)
+    path = os.path.join(args.plots_folder, name+'.png')
+    plt.savefig(path)
 
 if __name__ == '__main__':
     args = parse_arguments()
