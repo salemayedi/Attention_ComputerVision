@@ -15,8 +15,8 @@ class AttSegmentator(nn.Module):
     def __init__(self, num_classes, encoder, att_type='additive', img_size=(512, 512)):
         super().__init__()
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.low_feat = IntermediateLayerGetter(encoder, {"layer1": "layer1"}).to(self.device)
-        self.encoder = IntermediateLayerGetter(encoder, {"layer4": "out"}).to(self.device)
+        self.low_feat = IntermediateLayerGetter(encoder, {"layer1": "layer1"}).cuda()
+        self.encoder = IntermediateLayerGetter(encoder, {"layer4": "out"}).cuda()
         # For resnet18
         encoder_dim = 512
         low_level_dim = 64
