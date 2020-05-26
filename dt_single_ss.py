@@ -9,7 +9,7 @@ from utils.meters import AverageValueMeter
 from utils.weights import load_from_weights
 from utils import check_dir, set_random_seed, accuracy, mIoU, get_logger, save_in_log
 from models.att_segmentation import AttSegmentator
-from torch.utils.tensorboard import SummaryWriter
+#from torch.utils.tensorboard import SummaryWriter
 from data.transforms import get_transforms_binary_segmentation
 from models.pretraining_backbone import ResNet18Backbone
 from data.segmentation import DataReaderSingleClassSemanticSegmentationVector, DataReaderSemanticSegmentationVector
