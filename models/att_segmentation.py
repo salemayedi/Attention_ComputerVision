@@ -53,7 +53,6 @@ class AttSegmentator(nn.Module):
         x_enc= enc_feat.permute(0, 2, 3, 1).contiguous() # encoder output: value tensor [1, 16, 16, 512]
         x_enc = x_enc.view(x_enc.shape[0], -1, x_enc.shape[-1]) # x_enc.view(batch_size, -1, n_features) [1, 16*16, 512]
         class_vec = self.class_encoder(v_class) # Hidden states: this is query tensor  [1, 512]
-        import pdb; pdb.set_trace()
         x_enc_att, attention = self.attention_enc(x_enc, class_vec) 
         # x_enc_att: torch.Size([1, 16*16, 512]) , attention: torch.Size([1, 16*16y])
         x_enc = x_enc + x_enc_att
