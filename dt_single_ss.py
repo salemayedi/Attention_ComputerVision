@@ -49,10 +49,10 @@ def main(args):
     img_size = (args.size, args.size)
 
     # model
-    pretrained_model = ResNet18Backbone(False)
+    pretrained_model = ResNet18Backbone(False).cuda()
     # TODO: Complete the documentation for AttSegmentator model
     #raise NotImplementedError("TODO: Build model AttSegmentator model")
-    model = AttSegmentator(5, pretrained_model.features, att_type = 'dotprod', img_size = img_size )
+    model = AttSegmentator(5, pretrained_model.features, att_type = 'dotprod', img_size = img_size ).cuda()
 
     if os.path.isfile(args.pretrained_model_path):
         model = load_from_weights(model, args.pretrained_model_path, logger)
