@@ -56,7 +56,7 @@ def main(args):
     nns = []
     list_images = val_loader.image_files
     for i in range (len(list_images)):
-        if list_images[i] == '173.jpg':
+        if list_images[i] == '41.jpg':
             query_indices.append(i)
             break
     print(list_images[i], i , query_indices)
