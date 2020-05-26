@@ -24,7 +24,7 @@ def parse_arguments():
     parser.add_argument('data_folder', type=str, help="folder containing the data")
     parser.add_argument('--pretrained_model_path', type=str, default='')
     parser.add_argument('--output-root', type=str, default='results')
-    parser.add_argument('--lr', type=float, default=0.0001, help='learning rate')
+    parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
     parser.add_argument('--bs', type=int, default=32, help='batch_size')
     parser.add_argument('--att', type=str, default='sdotprod', help='Type of attention. Choose from {additive, cosine, dotprod, sdotprod}')
     parser.add_argument('--size', type=int, default=256, help='image size')
