@@ -59,10 +59,11 @@ class DotProdAttention(nn.Module):
         hidden_state = hidden_state.permute(0,2,1) # torch.Size([2, 512, 1])
         att = torch.matmul(encoder_output, hidden_state)  # torch.Size([2, 256, 512]) * torch.Size([2, 512, 1])  
                                         # = torch.Size([2, 256, 1])
-        e = att.squeeze(2) #  torch.Size([2, 256])
-        alpha = self.softmax(e)
+                                        # att are the scores
+        e = att.squeeze(2) #  torch.Size([2, 256]) 
+        alpha = self.softmax(e) # convert att to probabilities
         # alpha ------ torch.Size([2, 256])
-        context = (encoder_output * alpha.unsqueeze(2))
+        context = (encoder_output * alpha.unsqueeze(2)) # attention
         # context ------ torch.Size([2, 256, 512])
         
         return context, alpha
@@ -72,8 +73,8 @@ if __name__ == "__main__":
     model = Attention(512, 'dotprod').to(device)
     model.eval()
     print(model)
-    encoder_output = torch.randn(2, 256, 512).to(device)
-    v_embedding = torch.randn(2, 512).to(device)
+    encoder_output = torch.randn(1, 256, 512).to(device)
+    v_embedding = torch.randn(1, 512).to(device)
     with torch.no_grad():
         output, alpha = model.forward(encoder_output, v_embedding)
     print(output.size())
