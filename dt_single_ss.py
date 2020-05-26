@@ -48,11 +48,14 @@ def main(args):
     logger = get_logger(args.output_folder, args.exp_name)
     img_size = (args.size, args.size)
 
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print('#### This is the device used: ', device, '####')
+
     # model
-    pretrained_model = ResNet18Backbone(False).cuda()
+    pretrained_model = ResNet18Backbone(False).to(device)
     # TODO: Complete the documentation for AttSegmentator model
     #raise NotImplementedError("TODO: Build model AttSegmentator model")
-    model = AttSegmentator(5, pretrained_model.features, att_type = 'dotprod', img_size = img_size ).cuda()
+    model = AttSegmentator(5, pretrained_model.features, att_type = 'dotprod', img_size = img_size ).to(device)
 
     if os.path.isfile(args.pretrained_model_path):
         model = load_from_weights(model, args.pretrained_model_path, logger)
@@ -105,8 +108,8 @@ def main(args):
     val_iou_list = []
     for epoch in range(100):
         logger.info("Epoch {}".format(epoch))
-        train_loss, train_iou = train(train_loader, model, criterion, optimizer, logger)
-        val_loss, val_iou = validate(val_loader, model, criterion, logger, epoch)
+        train_loss, train_iou = train(train_loader, model, criterion, optimizer, logger, device)
+        val_loss, val_iou = validate(val_loader, model, criterion, logger, device, epoch)
 
         # TODO save model
         #raise NotImplementedError("TODO: implement the code for saving the model")
@@ -140,7 +143,7 @@ def main(args):
 
 
 
-def train(loader, model, criterion, optimizer, logger):
+def train(loader, model, criterion, optimizer, logger, device):
     logger.info("Training")
     model.train()
 
@@ -152,11 +155,11 @@ def train(loader, model, criterion, optimizer, logger):
     start_time = time.time()
     batch_time = time.time()
     for idx, (img, v_class, label) in enumerate(loader):
-        img = img.cuda()
-        v_class = v_class.float().cuda().squeeze()
+        img = img.to(device)
+        v_class = v_class.float().to(device).squeeze()
         logits, alphas = model(img, v_class, out_att=True)
         logits = logits.squeeze()
-        labels = (torch.nn.functional.interpolate(label.cuda(), size=logits.shape[-2:]).squeeze(1)*256).long()
+        labels = (torch.nn.functional.interpolate(label.to(device), size=logits.shape[-2:]).squeeze(1)*256).long()
         loss = criterion(logits, labels)
         iou = mIoU(logits, labels)
 
@@ -181,7 +184,7 @@ def train(loader, model, criterion, optimizer, logger):
     logger.info(time_txt)
     return loss_meter.mean, iou_meter.mean
 
-def validate(loader, model, criterion, logger, epoch=0):
+def validate(loader, model, criterion, logger, device, epoch=0):
     logger.info("Validating Epoch {}".format(epoch))
     model.eval()
 
@@ -190,11 +193,11 @@ def validate(loader, model, criterion, logger, epoch=0):
 
     start_time = time.time()
     for idx, (img, v_class, label) in enumerate(loader):
-        img = img.squeeze(0).cuda()
-        v_class = v_class.float().cuda().squeeze()
+        img = img.squeeze(0).to(device)
+        v_class = v_class.float().to(device).squeeze()
         logits, alphas = model(img, v_class, out_att=True)
         label = label.squeeze(0).unsqueeze(1)
-        labels = (torch.nn.functional.interpolate(label.cuda(), size=logits.shape[-2:]).squeeze(1)*256).long()
+        labels = (torch.nn.functional.interpolate(label.to(device), size=logits.shape[-2:]).squeeze(1)*256).long()
         loss = criterion(logits, labels)
         iou = mIoU(logits, labels)
 
