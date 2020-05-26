@@ -106,8 +106,8 @@ def main(args):
     val_iou_list = []
     for epoch in range(100):
         logger.info("Epoch {}".format(epoch))
-        train_loss, train_iou = train(train_loader, model, criterion, optimizer, log, logger, device)
-        val_loss, val_iou = validate(val_loader, model, criterion, log, logger, device, epoch)
+        train_loss, train_iou = train(train_loader, model, criterion, optimizer, logger, device)
+        val_loss, val_iou = validate(val_loader, model, criterion, logger, device, epoch)
 
         # TODO save model
         #raise NotImplementedError("TODO: implement the code for saving the model")
@@ -141,7 +141,7 @@ def main(args):
 
 
 
-def train(loader, model, criterion, optimizer, log, logger, device):
+def train(loader, model, criterion, optimizer, logger, device):
     logger.info("Training")
     model.train()
 
@@ -182,7 +182,7 @@ def train(loader, model, criterion, optimizer, log, logger, device):
     logger.info(time_txt)
     return loss_meter.mean, iou_meter.mean
 
-def validate(loader, model, criterion, log, logger, device, epoch=0):
+def validate(loader, model, criterion, logger, device, epoch=0):
     logger.info("Validating Epoch {}".format(epoch))
     model.eval()
 
