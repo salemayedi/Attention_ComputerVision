@@ -14,6 +14,7 @@ from data.transforms import get_transforms_binary_segmentation
 from models.pretraining_backbone import ResNet18Backbone
 from data.segmentation import DataReaderSingleClassSemanticSegmentationVector, DataReaderSemanticSegmentationVector
 import matplotlib.pyplot as plt
+import pandas as pd
 
 set_random_seed(0)
 global_step = 0
