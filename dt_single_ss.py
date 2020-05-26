@@ -34,7 +34,7 @@ def parse_arguments():
     hparam_keys = ["lr", "bs", "att"]
     args.exp_name = "_".join(["{}{}".format(k, getattr(args, k)) for k in hparam_keys])
 
-    args.exp_name += "_{}_{}".format(args.exp_suffix)
+    args.exp_name += "_{}".format(args.exp_suffix)
 
     args.output_folder = check_dir(os.path.join(args.output_root, 'dt_attseg', args.exp_name))
     args.model_folder = check_dir(os.path.join(args.output_folder, "models"))
