@@ -110,7 +110,7 @@ def main(args):
     val_iou_list = []
     for epoch in range(100):
         logger.info("Epoch {}".format(epoch))
-        train_loss, train_iou = train(train_loader, model, criterion, optimizer, logger, device)
+        train_loss, train_iou = train(train_loader, model, criterion, optimizer, logger, device, epoch)
         val_loss, val_iou = validate(val_loader, model, criterion, logger, device, epoch)
 
         # TODO save model
@@ -145,7 +145,7 @@ def main(args):
 
 
 
-def train(loader, model, criterion, optimizer, logger, device):
+def train(loader, model, criterion, optimizer, logger, device, epoch = 0):
     logger.info("Training")
     model.train()
 
@@ -174,9 +174,9 @@ def train(loader, model, criterion, optimizer, logger, device):
         iou_meter.add(iou)
         time_meter.add(time.time()-batch_time)
 
-        if idx % 50 == 0 or idx == len(loader)-1:
+        if idx % 200 == 0 or idx == len(loader)-1:
             text_print = "Epoch {:.4f} Avg loss = {:.4f} mIoU = {:.4f} Time {:.2f} (Total:{:.2f}) Progress {}/{}".format(
-                        global_step / steps_per_epoch, loss_meter.mean, iou_meter.mean, time_meter.mean, time.time()-start_time, idx, int(steps_per_epoch))
+                        epoch, loss_meter.mean, iou_meter.mean, time_meter.mean, time.time()-start_time, idx, int(steps_per_epoch))
             logger.info(text_print)
             loss_meter.reset()
             iou_meter.reset()
@@ -184,6 +184,8 @@ def train(loader, model, criterion, optimizer, logger, device):
         batch_time = time.time()
     time_txt = "batch time: {:.2f} total time: {:.2f}".format(time_meter.mean, time.time()-start_time)
     logger.info(time_txt)
+    train_txt = "train_loss: {:.2f} train_IoU : {:.2f}".format(loss_meter.mean, iou_meter.mean)
+    logger.info(train_txt)
     return loss_meter.mean, iou_meter.mean
 
 def validate(loader, model, criterion, logger, device, epoch=0):
@@ -195,19 +197,22 @@ def validate(loader, model, criterion, logger, device, epoch=0):
 
     start_time = time.time()
     for idx, (img, v_class, label) in enumerate(loader):
-        img = img.squeeze(0).to(device)
-        v_class = v_class.float().to(device).squeeze()
-        logits, alphas = model(img, v_class, out_att=True)
-        label = label.squeeze(0).unsqueeze(1)
-        labels = (torch.nn.functional.interpolate(label.to(device), size=logits.shape[-2:]).squeeze(1)*256).long()
-        loss = criterion(logits, labels)
-        iou = mIoU(logits, labels)
+        with torch.no_grad():
+            img = img.squeeze(0).to(device)
+            v_class = v_class.float().to(device).squeeze()
+            logits, alphas = model(img, v_class, out_att=True)
+            label = label.squeeze(0).unsqueeze(1)
+            labels = (torch.nn.functional.interpolate(label.to(device), size=logits.shape[-2:]).squeeze(1)*256).long()
+            loss = criterion(logits, labels)
+            iou = mIoU(logits, labels)
 
-        loss_meter.add(loss.item())
-        iou_meter.add(iou)
+            loss_meter.add(loss.item())
+            iou_meter.add(iou)
 
     text_print = "Epoch {} Avg loss = {:.4f} mIoU = {:.4f} Time {:.2f}".format(epoch, loss_meter.mean, iou_meter.mean, time.time()-start_time)
     logger.info(text_print)
+    val_txt = "val_loss: {:.2f} val_IoU : {:.2f}".format(loss_meter.mean, iou_meter.mean)
+    logger.info(val_txt)
     return loss_meter.mean, iou_meter.mean
 
 def save_model(model, optimizer, args, epoch, val_loss, val_iou, logger, best_iou=False, best_loss = False):
