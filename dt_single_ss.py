@@ -48,7 +48,7 @@ def main(args):
     logger = get_logger(args.output_folder, args.exp_name)
     img_size = (args.size, args.size)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
+    print('#### This is the device used: ', device, '####')
     # model
     pretrained_model = ResNet18Backbone(False)
     # TODO: Complete the documentation for AttSegmentator model
