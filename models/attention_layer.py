@@ -50,7 +50,7 @@ class DotProdAttention(nn.Module):
     def __init__(self, encoder_dim):
         super(DotProdAttention, self).__init__()
         self.U = nn.Linear(512, 512)
-        self.W = nn.Linear(encoder_dim, 512)
+        #self.W = nn.Linear(encoder_dim, 512)
         self.softmax = nn.Softmax(1)
         #raise NotImplementedError("TODO: Implement attention layer")
 
@@ -58,7 +58,7 @@ class DotProdAttention(nn.Module):
         # encoder_output ------ torch.Size([2, 256, 512])
         # hidden_state ------ torch.Size([2, 512])
         hidden_state = self.U(hidden_state)
-        encoder_output = self.W(encoder_output)
+        #encoder_output = self.W(encoder_output)
 
         hidden_state = hidden_state.unsqueeze(1) # torch.Size([2, 1, 512])
         hidden_state = hidden_state.permute(0,2,1) # torch.Size([2, 512, 1])
